@@ -39,41 +39,41 @@ function videoReady() {
 }
 
 function createButtons(){
-  var buttonHeight1 = 280;
-  var buttonHeight2 = 305;
+  var buttonHeight1 = 630;//280;
+  var buttonHeight2 = 655;//305;
 
   leftButton = createButton('left');
-  leftButton.position(15, buttonHeight1);
+  leftButton.position(330, buttonHeight1); //115
   leftButton.mousePressed(function () {
     classifier.addImage('left');
   });
-
+//40
   rightButton = createButton('right');
-  rightButton.position(55,buttonHeight1);
+  rightButton.position(370,buttonHeight1);
   rightButton.mousePressed(function () {
     classifier.addImage('right');
   });
-
+//200
   upButton = createButton('up');
-  upButton.position(100,buttonHeight1);
+  upButton.position(415,buttonHeight1);
   upButton.mousePressed(function () {
     classifier.addImage('up');
   });
-
+//215
   downButton = createButton('down');
-  downButton.position(135,buttonHeight1);
+  downButton.position(450,buttonHeight1);
   downButton.mousePressed(function () {
     classifier.addImage('down');
   });
 
   neutralButton = createButton('neutral');
-  neutralButton.position(185,buttonHeight1);
+  neutralButton.position(500,buttonHeight1);
   neutralButton.mousePressed(function () {
     classifier.addImage('neutral');
   });
 
   trainButton = createButton('train');
-  trainButton.position(15, buttonHeight2);
+  trainButton.position(330, buttonHeight2);
   trainButton.mousePressed(function () {
     classifier.train(whileTraining);
   });
@@ -82,7 +82,7 @@ function createButtons(){
 function setup() {
 
   //createCanvas(width, height);
-  createCanvas(380,600);
+  createCanvas(1400,780);
   video = createCapture(VIDEO);
   video.hide();
   background(255);
@@ -96,7 +96,7 @@ function setup() {
   createButtons();
 
   // create mqtt connection
-  client = new Paho.MQTT.Client(hostname, port, "", "clientId");
+  client = new Paho.Client(hostname, port, "", "clientId");
   client.onConnectionLost = onConnectionLost;
   // connect the client using SSL and trigger onConnect callback
   client.connect({
@@ -110,15 +110,22 @@ function setup() {
 //  });
 
   //maze.draw();
+  var messaging = setInterval(sendMsg, 500);
 }
 
 function draw() {
   background(0);
-  image(video, 0, 0, 380, 240);
+  //image(video, 320, 100, 760, 480); //320
+  translate(width,0); // move to far corner
+  scale(-1.0,1.0);    // flip x-axis backwards
+  image(video, 320, 100, 760, 480); //video on canvas, position, dimensions
   fill(0,255,0);
   textSize(16);
   //text(label, 10, height - 10);
-  text(label, 10, 260);
+  //text(label, 10, 260);
+  translate(width,0); 
+  scale(-1.0,1.0);
+  text(label, 320, 605);
   //maze.draw();
 
   // //maze
@@ -155,7 +162,6 @@ function whileTraining(loss) {
     console.log('Training Complete');
     classifier.classify(gotResults);
   } else {
-    label = "training";
     console.log(loss);
   }
 }
@@ -166,18 +172,22 @@ function gotResults(error, result) {
     console.error(error);
   } else {
     label = result;
-    var messageOut = new Paho.MQTT.Message(result);
-    messageOut.destinationName = "/move";
-    client.send(messageOut);
     classifier.classify(gotResults);
   }
 }
 
+function sendMsg() {
+  if ((label != "loading model") && (label !="neutral")){
+  var messageOut = new Paho.Message(label);
+    messageOut.destinationName = "/move";
+    client.send(messageOut);
+  }
+}
 
 function onConnect() {
     // Once a connection has been made, make subscription(s).
     console.log("onConnect");
-    var messageOut = new Paho.MQTT.Message("Connected");
+    var messageOut = new Paho.Message("Connected");
   messageOut.destinationName = "/move";
   client.send(messageOut);
 };
